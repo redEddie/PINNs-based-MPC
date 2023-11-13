@@ -16,7 +16,7 @@ from tensorflow.python.keras.layers import Dense, InputLayer, Lambda
 from optimizer.lbfgs import LBFGS
 from utils.plotting import new_fig, save_fig
 
-CHECKPOINTS_PATH = os.path.join('../checkpoints')
+CHECKPOINTS_PATH = os.path.join("../checkpoints")
 
 
 class NN(object, metaclass=abc.ABCMeta):
@@ -49,13 +49,17 @@ class NN(object, metaclass=abc.ABCMeta):
         self.model.add(InputLayer(input_shape=(self.input_dim,)))
 
         # Normalization Layer
-        self.model.add(Lambda(
-            lambda X: 2.0 * (X - lb) / (ub - lb) - 1.0))
+        self.model.add(Lambda(lambda X: 2.0 * (X - lb) / (ub - lb) - 1.0))
 
         # Hidden Layer
         for layer_width in layers[1:-1]:
-            self.model.add(Dense(layer_width, activation=tf.nn.tanh,
-                                 kernel_initializer='glorot_normal'))
+            self.model.add(
+                Dense(
+                    layer_width,
+                    activation=tf.nn.tanh,
+                    kernel_initializer="glorot_normal",
+                )
+            )
         # Output Layer :
         self.model.add(Dense(self.output_dim))
 
@@ -105,8 +109,20 @@ class NN(object, metaclass=abc.ABCMeta):
 
         return loss
 
-    def fit(self, x, y, epochs=2000, x_test=None, y_test=None, optimizer='adam', learning_rate=0.1,
-            load_best_weights=False, val_freq=1000, log_freq=1000, verbose=1):
+    def fit(
+        self,
+        x,
+        y,
+        epochs=2000,
+        x_test=None,
+        y_test=None,
+        optimizer="adam",
+        learning_rate=0.1,
+        load_best_weights=False,
+        val_freq=1000,
+        log_freq=1000,
+        verbose=1,
+    ):
         """
         Performs the neural network training phase.
 
@@ -126,16 +142,30 @@ class NN(object, metaclass=abc.ABCMeta):
         self.start_time = time.time()
         self.prev_time = self.start_time
 
-        if optimizer == 'adam':
-            self.train_adam(x, y, epochs, x_test, y_test, learning_rate, val_freq, log_freq, verbose)
-        elif optimizer == 'lbfgs':
-            self.train_lbfgs(x, y, epochs, x_test, y_test, learning_rate, val_freq, log_freq, verbose)
+        if optimizer == "adam":
+            self.train_adam(
+                x, y, epochs, x_test, y_test, learning_rate, val_freq, log_freq, verbose
+            )
+        elif optimizer == "lbfgs":
+            self.train_lbfgs(
+                x, y, epochs, x_test, y_test, learning_rate, val_freq, log_freq, verbose
+            )
 
         if load_best_weights is True:
             self.load_weights()
 
-    def train_adam(self, x, y, epochs=2000, x_test=None, y_test=None, learning_rate=0.1, val_freq=1000, log_freq=1000,
-                   verbose=1):
+    def train_adam(
+        self,
+        x,
+        y,
+        epochs=2000,
+        x_test=None,
+        y_test=None,
+        learning_rate=0.1,
+        val_freq=1000,
+        log_freq=1000,
+        verbose=1,
+    ):
         """
         Performs the neural network training, using the adam optimizer.
 
@@ -147,20 +177,38 @@ class NN(object, metaclass=abc.ABCMeta):
         """
 
         self.optimizer = tf.keras.optimizers.Adam(learning_rate=learning_rate)
-        epoch_loss = tf.keras.metrics.Mean(name='epoch_loss')
+        epoch_loss = tf.keras.metrics.Mean(name="epoch_loss")
         if verbose:
-            logging.info(f'Start ADAM optimization')
+            logging.info(f"Start ADAM optimization")
 
         for epoch in range(1, epochs + 1):
             loss = self.train_step(x, y)
             # Track progress
             epoch_loss.update_state(loss)  # Add current batch loss
 
-            self.epoch_callback(epoch, epoch_loss.result(), epochs, x_test, y_test, val_freq, log_freq,
-                                verbose)
+            self.epoch_callback(
+                epoch,
+                epoch_loss.result(),
+                epochs,
+                x_test,
+                y_test,
+                val_freq,
+                log_freq,
+                verbose,
+            )
 
-    def train_lbfgs(self, x, y, epochs=2000, x_test=None, y_test=None, learning_rate=1.0, val_freq=1000, log_freq=1000,
-                    verbose=1):
+    def train_lbfgs(
+        self,
+        x,
+        y,
+        epochs=2000,
+        x_test=None,
+        y_test=None,
+        learning_rate=1.0,
+        val_freq=1000,
+        log_freq=1000,
+        verbose=1,
+    ):
         """
         Performs the neural network training, using the L-BFGS optimizer.
 
@@ -173,12 +221,23 @@ class NN(object, metaclass=abc.ABCMeta):
 
         # train the model with L-BFGS solver
         if verbose:
-            logging.info(f'Start L-BFGS optimization')
+            logging.info(f"Start L-BFGS optimization")
 
         optimizer = LBFGS()
         optimizer.minimize(
-            self.model, self.loss_object, x, y, self.epoch_callback, epochs, x_test=x_test, y_test=y_test,
-            val_freq=val_freq, log_freq=log_freq, verbose=verbose, learning_rate=learning_rate)
+            self.model,
+            self.loss_object,
+            x,
+            y,
+            self.epoch_callback,
+            epochs,
+            x_test=x_test,
+            y_test=y_test,
+            val_freq=val_freq,
+            log_freq=log_freq,
+            verbose=verbose,
+            learning_rate=learning_rate,
+        )
 
     def predict(self, x):
         """
@@ -198,18 +257,26 @@ class NN(object, metaclass=abc.ABCMeta):
 
         fig = new_fig()
         ax = fig.add_subplot(111)
-        fig.suptitle(f'{self.name} - Training Metrics')
+        fig.suptitle(f"{self.name} - Training Metrics")
 
-        ax.set_ylabel('Loss')
-        ax.set_yscale('log')
-        ax.plot(self.train_loss_results.keys(), self.train_loss_results.values(), label='Loss')
+        ax.set_ylabel("Loss")
+        ax.set_yscale("log")
+        ax.plot(
+            self.train_loss_results.keys(),
+            self.train_loss_results.values(),
+            label="Loss",
+        )
         if self.train_accuracy_results:
             ax.set_ylabel("Loss / Accuracy")
-            ax.plot(self.train_accuracy_results.keys(), self.train_accuracy_results.values(), label='Accuracy')
+            ax.plot(
+                self.train_accuracy_results.keys(),
+                self.train_accuracy_results.values(),
+                label="Accuracy",
+            )
         ax.set_xlabel("Epoch", fontsize=14)
-        ax.legend(loc='best')
+        ax.legend(loc="best")
         if basename is not None:
-            save_fig(fig, f'{basename}_train_metrics')
+            save_fig(fig, f"{basename}_train_metrics")
         fig.tight_layout()
         plt.show()
 
@@ -221,7 +288,11 @@ class NN(object, metaclass=abc.ABCMeta):
         dict: predictions (on the testing dataset) over epochs
         """
 
-        return self.train_loss_results, self.train_accuracy_results, self.train_pred_results
+        return (
+            self.train_loss_results,
+            self.train_accuracy_results,
+            self.train_pred_results,
+        )
 
     def reset_train_results(self):
         """
@@ -263,7 +334,7 @@ class NN(object, metaclass=abc.ABCMeta):
             path = self.checkpoints_dir
 
         self.model.load_weights(tf.train.latest_checkpoint(path))
-        logging.info(f'\tWeights loaded from {path}')
+        logging.info(f"\tWeights loaded from {path}")
 
     def get_epoch_duration(self):
         """
@@ -273,7 +344,9 @@ class NN(object, metaclass=abc.ABCMeta):
         """
 
         now = time.time()
-        epoch_duration = datetime.datetime.fromtimestamp(now - self.prev_time).strftime("%M:%S.%f")[:-4]
+        epoch_duration = datetime.datetime.fromtimestamp(now - self.prev_time).strftime(
+            "%M:%S.%f"
+        )[:-4]
         self.prev_time = now
         return epoch_duration
 
@@ -286,8 +359,17 @@ class NN(object, metaclass=abc.ABCMeta):
 
         return datetime.timedelta(seconds=int(time.time() - self.start_time))
 
-    def epoch_callback(self, epoch, epoch_loss, epochs, x_val=None, y_val=None, val_freq=1000, log_freq=1000,
-                       verbose=1):
+    def epoch_callback(
+        self,
+        epoch,
+        epoch_loss,
+        epochs,
+        x_val=None,
+        y_val=None,
+        val_freq=1000,
+        log_freq=1000,
+        verbose=1,
+    ):
         """
         Callback function, which is called after each epoch, to produce proper training logging
         and keep track of training metrics.
@@ -307,25 +389,31 @@ class NN(object, metaclass=abc.ABCMeta):
 
         if epoch % val_freq == 0 or epoch == 1:
             length = len(str(epochs))
-            log_str = f'\tEpoch: {str(epoch).zfill(length)}/{epochs},\t' \
-                      f'Loss: {epoch_loss:.4e}'
+            log_str = (
+                f"\tEpoch: {str(epoch).zfill(length)}/{epochs},\t"
+                f"Loss: {epoch_loss:.4e}"
+            )
 
             if x_val is not None and y_val is not None:
                 [mean_squared_error, errors, Y_pred] = self.evaluate(x_val, y_val)
                 self.train_accuracy_results[epoch] = mean_squared_error
                 self.train_pred_results[epoch] = Y_pred
-                log_str += f',\tAccuracy (MSE): {mean_squared_error:.4e}'
+                log_str += f",\tAccuracy (MSE): {mean_squared_error:.4e}"
                 if mean_squared_error <= min(self.train_accuracy_results.values()):
-                    self.save_weights(os.path.join(self.checkpoints_dir, 'easy_checkpoint'))
+                    self.save_weights(
+                        os.path.join(self.checkpoints_dir, "easy_checkpoint")
+                    )
 
             if (epoch % log_freq == 0 or epoch == 1) and verbose == 1:
-                log_str += f',\t Elapsed time: {elapsed_time} (+{self.get_epoch_duration()})'
+                log_str += (
+                    f",\t Elapsed time: {elapsed_time} (+{self.get_epoch_duration()})"
+                )
                 logging.info(log_str)
 
         if epoch == epochs and x_val is None and y_val is None:
-            self.save_weights(os.path.join(self.checkpoints_dir, 'easy_checkpoint'))
+            self.save_weights(os.path.join(self.checkpoints_dir, "easy_checkpoint"))
 
-    def evaluate(self, x_val, y_val, metric='MSE'):
+    def evaluate(self, x_val, y_val, metric="MSE"):
         """
         Calculates the accuracy on a testing dataset.
 
@@ -339,9 +427,9 @@ class NN(object, metaclass=abc.ABCMeta):
 
         y_pred = self.model.predict(x_val)
         errors = None
-        if metric == 'MSE':
+        if metric == "MSE":
             errors = tf.square(y_val - y_pred)
-        elif metric == 'MAE':
+        elif metric == "MAE":
             errors = tf.abs(y_val - y_pred)
 
         mean_error = tf.reduce_mean(errors)
@@ -356,7 +444,9 @@ class NN(object, metaclass=abc.ABCMeta):
         :param int executions: number of performed executions to determine the mean value
         :return: float mean_prediction_time: the mean prediction time of the neural network on all executions
         """
-        X = tf.random.uniform(shape=[executions, batch_size, self.input_dim], dtype=self.dtype)
+        X = tf.random.uniform(
+            shape=[executions, batch_size, self.input_dim], dtype=self.dtype
+        )
 
         start_time = time.time()
         for execution in range(executions):

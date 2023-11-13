@@ -9,7 +9,12 @@ import tensorflow as tf
 
 from model.pinn import PINN
 from utils.data import generate_data_points, generate_collocation_points, load_data
-from utils.plotting import animate, plot_states, plot_input_sequence, plot_absolute_error
+from utils.plotting import (
+    animate,
+    plot_states,
+    plot_input_sequence,
+    plot_absolute_error,
+)
 from utils.system import M_tensor, k_tensor, q_tensor, B_tensor
 
 
@@ -36,12 +41,13 @@ class ManipulatorInformedNN(PINN):
         if X_f is not None:
             self.set_collocation_points(X_f)
 
+    ## 무슨 거창한 의미가 있는 것 같진 않고, t. x0, u를 받아오는 거인듯.
     def set_collocation_points(self, X_f):
         self.t = self.tensor(X_f[:, 0:1])
         self.x0 = self.tensor(X_f[:, 1:5])
         self.u = self.tensor(X_f[:, 5:7])
 
-    @tf.function
+    @tf.function  ## 별거아님. 다음 코드가 tf이고, 그래프로 가속된 연산한단거.
     def f_model(self, X_f=None):
         """
         The actual Physics Informed Neural Network for the approximation of the equation of motion of the
@@ -86,8 +92,16 @@ class ManipulatorInformedNN(PINN):
         q_tf = q_tensor(q1[:, 0], dq1_dt_tf, q2[:, 0], dq2_dt_tf)
         B_tf = B_tensor(i_PR90)
 
-        f_pred = tf.concat([dq_dt_tf - dq_dt[:, :, 0],
-                            tf.linalg.matvec(M_tf, d2q_dt_tf) + k_tf - q_tf - tf.linalg.matvec(B_tf, u)], axis=1)
+        f_pred = tf.concat(
+            [
+                dq_dt_tf - dq_dt[:, :, 0],
+                tf.linalg.matvec(M_tf, d2q_dt_tf)
+                + k_tf
+                - q_tf
+                - tf.linalg.matvec(B_tf, u),
+            ],
+            axis=1,
+        )
 
         return f_pred
 
@@ -97,7 +111,7 @@ if __name__ == "__main__":
     TRAIN_NET = False
 
     logging.getLogger().setLevel(logging.INFO)
-    logging.getLogger('matplotlib').setLevel(logging.WARNING)
+    logging.getLogger("matplotlib").setLevel(logging.WARNING)
 
     logging.info("TensorFlow version: {}".format(tf.version.VERSION))
     logging.info("Eager execution: {}".format(tf.executing_eagerly()))
@@ -108,13 +122,13 @@ if __name__ == "__main__":
     N_phys = 20000
     N_data = 100
 
-    logging.info(f'Epochs: {epochs}')
-    logging.info(f'N_data: {N_data}')
-    logging.info(f'N_phys: {N_phys}')
+    logging.info(f"Epochs: {epochs}")
+    logging.info(f"N_data: {N_data}")
+    logging.info(f"N_phys: {N_phys}")
 
     # Paths
-    data_path = os.path.join('../resources/data.npz')
-    weights_path = os.path.join('../resources/weights')
+    data_path = os.path.join("../resources/data.npz")
+    weights_path = os.path.join("../resources/weights")
 
     lb, ub, input_dim, output_dim, X_test, Y_test, X_star, Y_star = load_data(data_path)
 
@@ -135,10 +149,19 @@ if __name__ == "__main__":
             X_data, Y_data = generate_data_points(N_data, lb, ub)
             X_phys = generate_collocation_points(N_phys, lb, ub)
             pinn.set_collocation_points(X_phys)
-            logging.info(f'\t{i + 1}/{N_train} Start training of the PINN')
+            logging.info(f"\t{i + 1}/{N_train} Start training of the PINN")
             start_time = time.time()
-            pinn.fit(X_data, Y_data, epochs, X_star, Y_star, optimizer='lbfgs', learning_rate=1,
-                     val_freq=1000, log_freq=1000)
+            pinn.fit(
+                X_data,
+                Y_data,
+                epochs,
+                X_star,
+                Y_star,
+                optimizer="lbfgs",
+                learning_rate=1,
+                val_freq=1000,
+                log_freq=1000,
+            )
 
     # PINN Evaluation
     Y_pred, F_pred = pinn.predict(X_test)
@@ -151,7 +174,7 @@ if __name__ == "__main__":
     plot_states(T, Y_test, Y_pred)
     plot_absolute_error(T, Y_test, Y_pred)
 
-    animate(Y_test[::10], [Y_pred[::10]], ['PINN'], fps=1 / (10 * t_step))
+    animate(Y_test[::10], [Y_pred[::10]], ["PINN"], fps=1 / (10 * t_step))
 
-    if click.confirm('Do you want to save (overwrite) the models weights?'):
-        pinn.save_weights(os.path.join(weights_path, 'easy_checkpoint'))
+    if click.confirm("Do you want to save (overwrite) the models weights?"):
+        pinn.save_weights(os.path.join(weights_path, "easy_checkpoint"))

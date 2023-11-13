@@ -6,13 +6,23 @@ import tensorflow as tf
 
 from scipy.integrate import solve_ivp
 
+
 class MPC:
     """
     Class used to represent a Model Predictive Controller.
     """
 
-    def __init__(self, plant, model, u_ub, u_lb, t_sample=0.1, H=10,
-                 Q=tf.eye(1, dtype=tf.float64), R=tf.eye(1, dtype=tf.float64)):
+    def __init__(
+        self,
+        plant,
+        model,
+        u_ub,
+        u_lb,
+        t_sample=0.1,
+        H=10,
+        Q=tf.eye(1, dtype=tf.float64),
+        R=tf.eye(1, dtype=tf.float64),
+    ):
         self.plant = plant
         self.model = model
         self.H = H
@@ -23,8 +33,12 @@ class MPC:
         self.u_lb = u_lb
         self.input_dim = len(self.u_ub)
 
-        self.u = tf.Variable(initial_value=np.zeros((self.H, self.input_dim)), name='u', trainable=True,
-                             dtype=tf.float64)
+        self.u = tf.Variable(
+            initial_value=np.zeros((self.H, self.input_dim)),
+            name="u",
+            trainable=True,
+            dtype=tf.float64,
+        )
 
         self.Q = tf.convert_to_tensor(Q, dtype=tf.float64)
         self.R = tf.convert_to_tensor(R, dtype=tf.float64)
@@ -39,8 +53,9 @@ class MPC:
         :param x_pred: predicted states
         :return: J: cost value
         """
-        J = tf.reduce_sum(tf.square(x_ref - x_pred) @ self.Q) \
-            + tf.reduce_sum(tf.square(self.u) @ self.R)
+        J = tf.reduce_sum(tf.square(x_ref - x_pred) @ self.Q) + tf.reduce_sum(
+            tf.square(self.u) @ self.R
+        )
 
         return J
 
@@ -88,7 +103,7 @@ class MPC:
 
         for i, t in enumerate(T_ref[:-1]):
             start_time = time.time()
-            J, x_pred = self.solve_ocp(X_mpc[i], X_ref[i:i + self.H + 1])
+            J, x_pred = self.solve_ocp(X_mpc[i], X_ref[i : i + self.H + 1])
             ocp_solving_time = time.time() - start_time
             self.solving_times[i] = ocp_solving_time
 
@@ -100,16 +115,18 @@ class MPC:
             X_mpc[i + 1] = x_true
             U_mpc[i + 1] = u_k.numpy()
 
-            log_str = f'\tIter: {str(i + 1).zfill(len(str(N - 1)))}/{N - 1},\tJ: {J:.2e},' \
-                      f'\tt: {t + self.t_sample:.2f} s,'
+            log_str = (
+                f"\tIter: {str(i + 1).zfill(len(str(N - 1)))}/{N - 1},\tJ: {J:.2e},"
+                f"\tt: {t + self.t_sample:.2f} s,"
+            )
 
             for i in range(len(u_k)):
-                log_str = log_str + f'\tu{i + 1}: {u_k.numpy()[i]:.2f},'
+                log_str = log_str + f"\tu{i + 1}: {u_k.numpy()[i]:.2f},"
 
             for i in range(int(len(x_true) / 2)):
-                log_str = log_str + f'\tx{i + 1}(t, u): {x_true[i]:.2f},'
+                log_str = log_str + f"\tx{i + 1}(t, u): {x_true[i]:.2f},"
 
-            log_str = log_str + f'\tOCP-solving-time: {ocp_solving_time:.2e} s'
+            log_str = log_str + f"\tOCP-solving-time: {ocp_solving_time:.2e} s"
 
             logging.info(log_str)
 
@@ -126,7 +143,7 @@ class MPC:
         X_pred = x_i
 
         for i in range(H):
-            x = tf.concat((t, x_i, u_array[i:i + 1]), 1)
+            x = tf.concat((t, x_i, u_array[i : i + 1]), 1)
             x_pred = self.model(x)
             X_pred = tf.concat((X_pred, x_pred), 0)
             x_i = x_pred
