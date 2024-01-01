@@ -67,7 +67,7 @@ if __name__ == "__main__":
     )
 
     # Testing self loop prediction
-    H_sl = 20  ## self loop horizon 설정
+    H_sl = 200  ## self loop horizon 설정
 
     # Generate self loop prediction input sequence
     U1_sl = 0.5 * np.sin(np.linspace(0, 2 * np.pi, H_sl))
